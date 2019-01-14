@@ -50,12 +50,7 @@ seg2.make_audio()
 
 # To compress a longer segment, a DCT spectrogram is created
 def make_dct_spectrogram(wave, seg_length):
-    """Computes the DCT spectrogram of the wave.
 
-    seg_length: number of samples in each segment
-
-    returns: Spectrogram
-    """
     window = np.hamming(seg_length)
     i, j = 0, seg_length
     step = seg_length / 2

@@ -1,25 +1,8 @@
-"""This file contains code for use with "Think Stats" and
-"Think Bayes", both by Allen B. Downey, available from greenteapress.com
 
-Copyright 2014 Allen B. Downey
-License: GNU GPLv3 http://www.gnu.org/licenses/gpl.html
-"""
 
 from __future__ import print_function, division
 
-"""This file contains class definitions for:
 
-Hist: represents a histogram (map from values to integer frequencies).
-
-Pmf: represents a probability mass function (map from values to probs).
-
-_DictWrapper: private parent class for Hist and Pmf.
-
-Cdf: represents a discrete cumulative distribution function
-
-Pdf: represents a continuous probability density function
-
-"""
 
 import bisect
 import copy
@@ -48,76 +31,42 @@ from io import open
 ROOT2 = math.sqrt(2)
 
 def RandomSeed(x):
-    """Initialize the random and np.random generators.
 
-    x: int seed
-    """
     random.seed(x)
     np.random.seed(x)
-    
+
 
 def Odds(p):
-    """Computes odds for a given probability.
 
-    Example: p=0.75 means 75 for and 25 against, or 3:1 odds in favor.
-
-    Note: when p=1, the formula for odds divides by zero, which is
-    normally undefined.  But I think it is reasonable to define Odds(1)
-    to be infinity, so that's what this function does.
-
-    p: float 0-1
-
-    Returns: float odds
-    """
     if p == 1:
         return float('inf')
     return p / (1 - p)
 
 
 def Probability(o):
-    """Computes the probability corresponding to given odds.
 
-    Example: o=2 means 2:1 odds in favor, or 2/3 probability
-
-    o: float odds, strictly positive
-
-    Returns: float probability
-    """
     return o / (o + 1)
 
 
 def Probability2(yes, no):
-    """Computes the probability corresponding to given odds.
 
-    Example: yes=2, no=1 means 2:1 odds in favor, or 2/3 probability.
-    
-    yes, no: int or float odds in favor
-    """
     return yes / (yes + no)
 
 
 class Interpolator(object):
-    """Represents a mapping between sorted sequences; performs linear interp.
 
-    Attributes:
-        xs: sorted list
-        ys: sorted list
-    """
 
     def __init__(self, xs, ys):
         self.xs = xs
         self.ys = ys
 
     def Lookup(self, x):
-        """Looks up x and returns the corresponding value of y."""
         return self._Bisect(x, self.xs, self.ys)
 
     def Reverse(self, y):
-        """Looks up y and returns the corresponding value of x."""
         return self._Bisect(y, self.ys, self.xs)
 
     def _Bisect(self, x, xs, ys):
-        """Helper function."""
         if x <= xs[0]:
             return ys[0]
         if x >= xs[-1]:
@@ -130,18 +79,13 @@ class Interpolator(object):
 
 # When we plot Hist, Pmf and Cdf objects, they don't appear in
 # the legend unless we override the default label.
-DEFAULT_LABEL = '_nolegend_' 
+DEFAULT_LABEL = '_nolegend_'
 
 
 class _DictWrapper(object):
-    """An object that contains a dictionary."""
 
     def __init__(self, obj=None, label=None):
-        """Initializes the distribution.
 
-        obj: Hist, Pmf, Cdf, Pdf, dict, pandas Series, list of pairs
-        label: string label
-        """
         self.label = label if label is not None else DEFAULT_LABEL
         self.d = {}
 
@@ -213,27 +157,14 @@ class _DictWrapper(object):
         del self.d[value]
 
     def Copy(self, label=None):
-        """Returns a copy.
 
-        Make a shallow copy of d.  If you want a deep copy of d,
-        use copy.deepcopy on the whole object.
-
-        label: string label for the new Hist
-
-        returns: new _DictWrapper with the same type
-        """
         new = copy.copy(self)
         new.d = copy.copy(self.d)
         new.label = label if label is not None else self.label
         return new
 
     def Scale(self, factor):
-        """Multiplies the values by a factor.
 
-        factor: what to multiply by
-
-        Returns: new object
-        """
         new = self.Copy()
         new.d.clear()
 
@@ -242,12 +173,7 @@ class _DictWrapper(object):
         return new
 
     def Log(self, m=None):
-        """Log transforms the probabilities.
-        
-        Removes values with probability 0.
 
-        Normalizes so that the largest logprob is 0.
-        """
         if self.log:
             raise ValueError("Pmf/Hist already under a log transform")
         self.log = True
@@ -262,12 +188,7 @@ class _DictWrapper(object):
                 self.Remove(x)
 
     def Exp(self, m=None):
-        """Exponentiates the probabilities.
 
-        m: how much to shift the ps before exponentiating
-
-        If m is None, normalizes so that the largest prob is 1.
-        """
         if not self.log:
             raise ValueError("Pmf/Hist not under a log transform")
         self.log = False
@@ -287,23 +208,14 @@ class _DictWrapper(object):
         self.d = d
 
     def Values(self):
-        """Gets an unsorted sequence of values.
 
-        Note: one source of confusion is that the keys of this
-        dictionary are the values of the Hist/Pmf, and the
-        values of the dictionary are frequencies/probabilities.
-        """
         return self.d.keys()
 
     def Items(self):
-        """Gets an unsorted sequence of (value, freq/prob) pairs."""
         return self.d.items()
 
     def SortedItems(self):
-        """Gets a sorted sequence of (value, freq/prob) pairs.
 
-        It items are unsortable, the result is unsorted.
-        """
         def isnan(x):
             try:
                 return math.isnan(x)
@@ -320,13 +232,7 @@ class _DictWrapper(object):
             return self.d.items()
 
     def Render(self, **options):
-        """Generates a sequence of points suitable for plotting.
 
-        Note: options are ignored
-
-        Returns:
-            tuple of (sorted value sequence, freq/prob sequence)
-        """
         return zip(*self.SortedItems())
 
     def MakeCdf(self, label=None):
@@ -340,80 +246,41 @@ class _DictWrapper(object):
             print(val, prob)
 
     def Set(self, x, y=0):
-        """Sets the freq/prob associated with the value x.
 
-        Args:
-            x: number value
-            y: number freq or prob
-        """
         self.d[x] = y
 
     def Incr(self, x, term=1):
-        """Increments the freq/prob associated with the value x.
 
-        Args:
-            x: number value
-            term: how much to increment by
-        """
         self.d[x] = self.d.get(x, 0) + term
 
     def Mult(self, x, factor):
-        """Scales the freq/prob associated with the value x.
 
-        Args:
-            x: number value
-            factor: how much to multiply by
-        """
         self.d[x] = self.d.get(x, 0) * factor
 
     def Remove(self, x):
-        """Removes a value.
 
-        Throws an exception if the value is not there.
-
-        Args:
-            x: value to remove
-        """
         del self.d[x]
 
     def Total(self):
-        """Returns the total of the frequencies/probabilities in the map."""
         total = sum(self.d.values())
         return total
 
     def MaxLike(self):
-        """Returns the largest frequency/probability in the map."""
         return max(self.d.values())
 
     def Largest(self, n=10):
-        """Returns the largest n values, with frequency/probability.
 
-        n: number of items to return
-        """
         return sorted(self.d.items(), reverse=True)[:n]
 
     def Smallest(self, n=10):
-        """Returns the smallest n values, with frequency/probability.
 
-        n: number of items to return
-        """
         return sorted(self.d.items(), reverse=False)[:n]
 
 
 class Hist(_DictWrapper):
-    """Represents a histogram, which is a map from values to frequencies.
 
-    Values can be any hashable type; frequencies are integer counters.
-    """
     def Freq(self, x):
-        """Gets the frequency associated with the value x.
 
-        Args:
-            x: number value
-
-        Returns:
-            int frequency
-        """
         return self.d.get(x, 0)
 
     def Freqs(self, xs):
@@ -435,22 +302,10 @@ class Hist(_DictWrapper):
 
 
 class Pmf(_DictWrapper):
-    """Represents a probability mass function.
-    
-    Values can be any hashable type; probabilities are floating-point.
-    Pmfs are not necessarily normalized.
-    """
+
 
     def Prob(self, x, default=0):
-        """Gets the probability associated with the value x.
 
-        Args:
-            x: number value
-            default: value to return if the key is not there
-
-        Returns:
-            float probability
-        """
         return self.d.get(x, default)
 
     def Probs(self, xs):
@@ -458,15 +313,7 @@ class Pmf(_DictWrapper):
         return [self.Prob(x) for x in xs]
 
     def Percentile(self, percentage):
-        """Computes a percentile of a given Pmf.
 
-        Note: this is not super efficient.  If you are planning
-        to compute more than a few percentiles, compute the Cdf.
-
-        percentage: float 0-100
-
-        returns: value from the Pmf
-        """
         p = percentage / 100
         total = 0
         for val, prob in sorted(self.Items()):
@@ -475,12 +322,7 @@ class Pmf(_DictWrapper):
                 return val
 
     def ProbGreater(self, x):
-        """Probability that a sample from this Pmf exceeds x.
 
-        x: number
-
-        returns: float probability
-        """
         if isinstance(x, _DictWrapper):
             return PmfProbGreater(self, x)
         else:
@@ -488,12 +330,7 @@ class Pmf(_DictWrapper):
             return sum(t)
 
     def ProbLess(self, x):
-        """Probability that a sample from this Pmf is less than x.
 
-        x: number
-
-        returns: float probability
-        """
         if isinstance(x, _DictWrapper):
             return PmfProbLess(self, x)
         else:
@@ -501,29 +338,14 @@ class Pmf(_DictWrapper):
             return sum(t)
 
     def ProbEqual(self, x):
-        """Probability that a sample from this Pmf is exactly x.
 
-        x: number
-
-        returns: float probability
-        """
         if isinstance(x, _DictWrapper):
             return PmfProbEqual(self, x)
         else:
             return self[x]
 
-    # NOTE: I've decided to remove the magic comparators because they
-    # have the side-effect of making Pmf sortable, but in fact they
-    # don't support sorting.
-
     def Normalize(self, fraction=1):
-        """Normalizes this PMF so the sum of all probs is fraction.
 
-        Args:
-            fraction: what the total should be after normalization
-
-        Returns: the total probability before normalizing
-        """
         if self.log:
             raise ValueError("Normalize: Pmf is under a log transform")
 
@@ -538,13 +360,7 @@ class Pmf(_DictWrapper):
         return total
 
     def Random(self):
-        """Chooses a random element from this PMF.
-
-        Note: this is not very efficient.  If you plan to call
-        this more than a few times, consider converting to a CDF.
-
-        Returns:
-            float value from the Pmf
+float value from the Pmf
         """
         target = random.random()
         total = 0
@@ -557,11 +373,7 @@ class Pmf(_DictWrapper):
         raise ValueError('Random: Pmf might not be normalized.')
 
     def Sample(self, n):
-        """Generates a random sample from this distribution.
-        
-        n: int length of the sample
-        returns: NumPy array
-        """
+
         return self.MakeCdf().Sample(n)
 
     def Mean(self):
@@ -581,13 +393,7 @@ class Pmf(_DictWrapper):
         return self.MakeCdf().Percentile(50)
 
     def Var(self, mu=None):
-        """Computes the variance of a PMF.
 
-        mu: the point around which the variance is computed;
-                if omitted, computes the mean
-
-        returns: float variance
-        """
         if mu is None:
             mu = self.Mean()
 
@@ -599,16 +405,10 @@ class Pmf(_DictWrapper):
         Returns:
             expectation
         """
-        return np.sum(p * func(x) for x, p in self.Items()) 
+        return np.sum(p * func(x) for x, p in self.Items())
 
     def Std(self, mu=None):
-        """Computes the standard deviation of a PMF.
 
-        mu: the point around which the variance is computed;
-                if omitted, computes the mean
-
-        returns: float standard deviation
-        """
         var = self.Var(mu)
         return math.sqrt(var)
 
@@ -987,7 +787,7 @@ class Cdf:
     """
     def __init__(self, obj=None, ps=None, label=None):
         """Initializes.
-        
+
         If ps is provided, obj must be the corresponding list of values.
 
         obj: Hist, Pmf, Cdf, Pdf, dict, pandas Series, list of pairs
@@ -1008,7 +808,7 @@ class Cdf:
                 logging.warning("Cdf: can't pass ps without also passing xs.")
             return
         else:
-            # if the caller provides xs and ps, just store them          
+            # if the caller provides xs and ps, just store them
             if ps is not None:
                 if isinstance(ps, str):
                     logging.warning("Cdf: ps can't be a string")
@@ -1050,7 +850,7 @@ class Cdf:
         if self.label == DEFAULT_LABEL:
             return '%s(%s, %s)' % (cls, str(self.xs), str(self.ps))
         else:
-            return '%s(%s, %s, %s)' % (cls, str(self.xs), str(self.ps), 
+            return '%s(%s, %s, %s)' % (cls, str(self.xs), str(self.ps),
                                        repr(self.label))
 
     def __len__(self):
@@ -1233,7 +1033,7 @@ class Cdf:
 
     def Sample(self, n):
         """Generates a random sample from this distribution.
-        
+
         n: int length of the sample
         returns: NumPy array
         """
@@ -1597,7 +1397,7 @@ class Pdf(object):
             xs = options.pop('xs', None)
             if xs is None:
                 xs = self.GetLinspace()
-            
+
         ds = self.Density(xs)
         return xs, ds
 
@@ -1818,7 +1618,7 @@ def EvalNormalPdf(x, mu, sigma):
     x: value
     mu: mean
     sigma: standard deviation
-    
+
     returns: float probability density
     """
     return stats.norm.pdf(x, mu, sigma)
@@ -1826,7 +1626,7 @@ def EvalNormalPdf(x, mu, sigma):
 
 def MakeNormalPmf(mu, sigma, num_sigmas, n=201):
     """Makes a PMF discrete approx to a Normal distribution.
-    
+
     mu: float mean
     sigma: float standard deviation
     num_sigmas: how many sigmas to extend in each direction
@@ -1851,7 +1651,7 @@ def EvalBinomialPmf(k, n, p):
     Returns the probabily of k successes in n trials with probability p.
     """
     return stats.binom.pmf(k, n, p)
-    
+
 
 def MakeBinomialPmf(n, p):
     """Evaluates the binomial PMF.
@@ -1900,7 +1700,7 @@ def EvalGeometricPmf(k, p, loc=0):
     p: probability of success on each trial
     """
     return stats.geom.pmf(k, p, loc=loc)
-    
+
 
 def MakeGeometricPmf(p, loc=0, high=10):
     """Evaluates the binomial PMF.
@@ -1925,7 +1725,7 @@ def EvalHypergeomPmf(k, N, K, n):
     N with K successes in it.
     """
     return stats.hypergeom.pmf(k, N, K, n)
-    
+
 
 def EvalPoissonPmf(k, lam):
     """Computes the Poisson PMF.
@@ -2050,13 +1850,13 @@ def MakeParetoPmf(xm, alpha, high, num=101):
 
 def StandardNormalCdf(x):
     """Evaluates the CDF of the standard Normal distribution.
-    
+
     See http://en.wikipedia.org/wiki/Normal_distribution
     #Cumulative_distribution_function
 
     Args:
         x: float
-                
+
     Returns:
         float
     """
@@ -2065,14 +1865,14 @@ def StandardNormalCdf(x):
 
 def EvalNormalCdf(x, mu=0, sigma=1):
     """Evaluates the CDF of the normal distribution.
-    
+
     Args:
         x: float
 
         mu: mean parameter
-        
+
         sigma: standard deviation parameter
-                
+
     Returns:
         float
     """
@@ -2082,15 +1882,15 @@ def EvalNormalCdf(x, mu=0, sigma=1):
 def EvalNormalCdfInverse(p, mu=0, sigma=1):
     """Evaluates the inverse CDF of the normal distribution.
 
-    See http://en.wikipedia.org/wiki/Normal_distribution#Quantile_function  
+    See http://en.wikipedia.org/wiki/Normal_distribution#Quantile_function
 
     Args:
         p: float
 
         mu: mean parameter
-        
+
         sigma: standard deviation parameter
-                
+
     Returns:
         float
     """
@@ -2099,11 +1899,11 @@ def EvalNormalCdfInverse(p, mu=0, sigma=1):
 
 def EvalLognormalCdf(x, mu=0, sigma=1):
     """Evaluates the CDF of the lognormal distribution.
-    
+
     x: float or sequence
     mu: mean parameter
     sigma: standard deviation parameter
-                
+
     Returns: float or sequence
     """
     return stats.lognorm.cdf(x, loc=mu, scale=sigma)
@@ -2376,14 +2176,14 @@ def NormalProbability(ys, jitter=0):
     """Generates data for a normal probability plot.
 
     ys: sequence of values
-    jitter: float magnitude of jitter added to the ys 
+    jitter: float magnitude of jitter added to the ys
 
     returns: numpy arrays xs, ys
     """
     n = len(ys)
     xs = np.random.normal(0, 1, n)
     xs.sort()
-    
+
     if jitter:
         ys = Jitter(ys, jitter)
     else:
@@ -2398,7 +2198,7 @@ def Jitter(values, jitter=0.5):
 
     values: sequence
     jitter: scalar magnitude of jitter
-    
+
     returns: new numpy array
     """
     n = len(values)
@@ -2422,7 +2222,7 @@ def NormalProbabilityPlot(sample, fit_color='0.8', **options):
     xs, ys = NormalProbability(sample)
     thinkplot.Plot(xs, ys, **options)
 
- 
+
 def Mean(xs):
     """Computes mean.
 
@@ -2472,7 +2272,7 @@ def MeanVar(xs, ddof=0):
 
     xs: sequence of values
     ddof: delta degrees of freedom
-    
+
     returns: pair of float, mean and var
     """
     xs = np.asarray(xs)
@@ -2625,13 +2425,13 @@ def MapToRanks(t):
 
     Args:
         t: sequence of numbers
-    
+
     Returns:
         list of integer ranks, starting at 1
     """
     # pair up each value with its index
     pairs = enumerate(t)
-    
+
     # sort by value
     sorted_pairs = sorted(pairs, key=itemgetter(1))
 
@@ -2701,7 +2501,7 @@ def CoefDetermination(ys, res):
     Args:
         ys: dependent variable
         res: residuals
-        
+
     Returns:
         float coefficient of determination
     """
@@ -2827,7 +2627,7 @@ class FixedWidthVariables(object):
         returns: DataFrame
         """
         df = pandas.read_fwf(filename,
-                             colspecs=self.colspecs, 
+                             colspecs=self.colspecs,
                              names=self.names,
                              **options)
         return df
@@ -2841,7 +2641,7 @@ def ReadStataDct(dct_file, **options):
 
     returns: FixedWidthVariables object
     """
-    type_map = dict(byte=int, int=int, long=int, float=float, 
+    type_map = dict(byte=int, int=int, long=int, float=float,
                     double=float, numeric=float)
 
     var_info = []
@@ -2860,7 +2660,7 @@ def ReadStataDct(dct_file, **options):
                 vtype = type_map[vtype]
             long_desc = ' '.join(t[4:]).strip('"')
             var_info.append((start, vtype, name, fstring, long_desc))
-            
+
     columns = ['start', 'type', 'name', 'fstring', 'desc']
     variables = pandas.DataFrame(var_info, columns=columns)
 
@@ -2991,7 +2791,7 @@ class HypothesisTest(object):
 
         returns: float p-value
         """
-        self.test_stats = [self.TestStatistic(self.RunModel()) 
+        self.test_stats = [self.TestStatistic(self.RunModel())
                            for _ in range(iters)]
         self.test_cdf = Cdf(self.test_stats)
 
@@ -3016,7 +2816,7 @@ class HypothesisTest(object):
     def TestStatistic(self, data):
         """Computes the test statistic.
 
-        data: data in whatever form is relevant        
+        data: data in whatever form is relevant
         """
         raise UnimplementedMethodException()
 
@@ -3035,7 +2835,7 @@ class HypothesisTest(object):
 
 def main():
     pass
-    
+
 
 if __name__ == '__main__':
     main()

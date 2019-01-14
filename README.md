@@ -1,5 +1,5 @@
 The Discrete Cosine Transformation
-============================
+===========================
 An efficient algorithm which uses the Discrete Cosine Transformation to compress .wav files by breaking long signals into segments and computing the DCT of each segment. Next, it identifies frequency components with amplitudes so low they are inaudible and removes them storing only the frequencies that remain. It then plays the signal back, loads the frequencies and amplitudes for each segment and applies the DCT.
 
 ### Freesound
